@@ -28,12 +28,13 @@ void initial(particle col[])
 	double x,y;
 	for(i=0; i<colMax; i++)
 	{
-		x= rand() % 10;	//Zufallspositionenen
-		y= rand() % 10;
+		x= 0;//rand() % 10;	//Zufallspositionenen
+		y= 0;//rand() % 10;
 		col[i].setposition(x,y);
 		col[i].VX=1.0;	//Einheitsgeschwindigkeiten
 		col[i].VY=1.0;
 	};
+//	printpos(&col[0],);
 }
 
 void particle::setposition(double &x, double &y)

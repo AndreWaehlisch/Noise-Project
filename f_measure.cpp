@@ -12,12 +12,15 @@
 #include <complex>
 #include <string.h>
 
+#include <lua5.2/lua.hpp>
+
+
 using namespace std;
 
 /**************************************************************************************
-*************************************************************************************** 
+***************************************************************************************
  Variablen
-*************************************************************************************** 
+***************************************************************************************
 ***************************************************************************************/
 
 extern int i,j,l,k,n,t;
@@ -31,34 +34,35 @@ extern double sh;
 //Simulationbox
 extern int colMax;
 extern FILE *pos_file;
+extern FILE *momentum_file;
 
 //control of printing events
 int qt=100;
 double part=0.0;
 
-void printpos(particle a[])
+//Lua state
+extern lua_State *Lua;
+
+void printpos(particle a[], double L[])
 {
-	for(i=0; i<colMax; i++)
+	if ( t>=Time*part && t%qt==0 )
 	{
-		
-		if(t>=Time*part && t%qt==0 && i==0){fprintf(pos_file,"%lf",t*h);};
-		if(t>=Time*part && t%qt==0)
+
+		lua_checkstack(Lua, colMax); // ensure enough space in lua stack
+
+		for(i=0; i<colMax; i++)
 		{
+			if ( !i )
+				fprintf(pos_file,"%lf",t*h);
+
 			fprintf(pos_file,"	%lf	%lf",a[i].X,a[i].Y);
-			if(i==0)
-			{
-				cout << "-------------" << endl;
+			fprintf(momentum_file,"%lf\n",L[i]);
+			lua_pushnumber(Lua, L[i]);
+
+			if ( !i )
 				cout << t*h << "...von..." << Time*h << endl;
-			};
 		};
-		if(t>=Time*part && t%qt==0 && i==colMax-1){fprintf(pos_file,"\n");};
-	};
+
+		fprintf(pos_file,"\n");
+	}
 }
-
-
-
-
-
-
-
-

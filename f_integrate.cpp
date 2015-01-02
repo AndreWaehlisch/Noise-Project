@@ -1,5 +1,4 @@
 #include <iostream>
-#include "head.h"
 #include <vector>
 #include <fstream>
 #include <stdio.h>
@@ -12,22 +11,41 @@
 #include <complex>
 #include <string.h>
 
-using namespace std;
-extern int i,colMax;
-extern double h,sqvarianz,varianz,friction;
+#include "head.h"
 
+using namespace std;
+
+extern int i,colMax;
+extern double h,sqvarianz,friction;
+extern gsl_rng *myRNG;
 
 //Integrationsroutine inkl self propulsion
-void integrate(particle a[],double fx[], double fy[], int &seed)
+void integrate(particle a[],double fx[], double fy[], double L[])
 {
+	// Massen-Schwerpunkt R(t) und mean-velocity V(t)
+	double Rx, Ry, Vx, Vy = 0;
+	for (i=0; i<colMax; i++)
+	{
+		Rx += a[i].X;
+		Ry += a[i].Y;
+		Vx += a[i].VX;
+		Vy += a[i].VY;
+	}
+	Rx *= colMax;
+	Ry *= colMax;
+	Vx *= colMax;
+	Vy *= colMax;
+
 	for(i=0; i<colMax; i++)
-	{		
-		fx[i]=(fx[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VX)*h/friction+sqvarianz*gauss(1.0,seed);seed++;
-		fy[i]=(fy[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VY)*h/friction+sqvarianz*gauss(1.0,seed);seed++;
+	{
+		L[i] = (a[i].X - Rx)*(a[i].VY - Ry) - (a[i].Y - Ry)*(a[i].VX - Rx);
+
+		fx[i]=(fx[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VX)*h/friction+sqvarianz*gauss();
+		fy[i]=(fy[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VY)*h/friction+sqvarianz*gauss();
 
 		a[i].VX=a[i].VX+fx[i];
-		a[i].VY=a[i].VY+fy[i];	
-		
+		a[i].VY=a[i].VY+fy[i];
+
 		a[i].X=a[i].X+a[i].VX*h;
 		a[i].Y=a[i].Y+a[i].VY*h;
 
@@ -38,14 +56,8 @@ void integrate(particle a[],double fx[], double fy[], int &seed)
 
 
 //Gaussche Zufallszahlen
-double gauss(double varianz, int &seed)
+double gauss()
 {
-	gsl_rng *r;
-	r = gsl_rng_alloc(gsl_rng_mt19937);
-	seed++;
-	gsl_rng_set(r,seed);
-	double gn=gsl_ran_gaussian(r,varianz);
-	gsl_rng_free (r);
-	return(gn);
+	return gsl_ran_gaussian(myRNG, 1.0);
 };
 
