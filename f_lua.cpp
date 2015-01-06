@@ -7,7 +7,7 @@ using namespace std;
 extern int colMax; //Teilchenzahl
 extern lua_State *Lua; //Lua state
 
-inline void LUAerror (const char *fmt, ...)
+void LUAerror (const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
@@ -17,7 +17,7 @@ inline void LUAerror (const char *fmt, ...)
 	exit(EXIT_FAILURE);
 }
 
-inline void LUACalcAngularMomentum (const char *fname)
+void LUACalcAngularMomentum (const char *fname)
 {
 	//luaL_dofile(Lua, fname); // loads script and executes it
 

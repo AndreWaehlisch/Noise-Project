@@ -1,6 +1,6 @@
 # Pictures for slideshow
-*.png
 snapshots/*
+snapshot*.png
 
 # Result DATA
 *.dat
