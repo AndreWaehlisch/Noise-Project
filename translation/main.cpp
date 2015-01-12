@@ -1,5 +1,4 @@
 #include <iostream>
-#include "head.h"
 #include <vector>
 #include <fstream>
 #include <stdio.h>
@@ -13,6 +12,7 @@
 #include <string.h>
 
 #include <lua5.2/lua.hpp>
+#include "head.h"
 
 using namespace std;
 
@@ -28,7 +28,7 @@ double h=0.01;	//Integrationschrittweite
 double sh=sqrt(h);
 
 //Simulationbox
-int colMax=100; //Anzahl Teilchen
+int colMax=300; //Anzahl Teilchen
 double density=0.5;
 double friction=1.0;
 double volume=colMax/density;
@@ -38,29 +38,39 @@ double temp=0.04;
 double D=temp/friction;
 double varianz=2.0*D*h;
 double sqvarianz=sqrt(varianz);
-int seed=1;
 double fcc=(lx)/(sqrt((colMax)/2.0));
+
+//RNG
+int seed=1;
+gsl_rng *myRNG;
 
 //Fileschreiberei
 FILE *pos_file;
 FILE *momentum_file;
 const char *LUAFILENAME = "angularMomentum.lua";
 
+//LUA instance
+lua_State *Lua = luaL_newstate();
+
 //distance
 double dx,dy;//Komponenten aus distance
 double dist;//Abstandsbetrag aus distance
+
+//OUTPUT toggle
+const int printParams = 0;
 
 int main()
 {
 	//Systemzeit ist seed fuer den Zufallsgenerator
 	time(&tstart);
 	seed=int(tstart*h);
+	myRNG = gsl_rng_alloc(gsl_rng_mt19937);
+	gsl_rng_set(myRNG,seed);
 
 	//LUA INIT
-	lua_State *Lua = luaL_newstate();
 	luaL_openlibs(Lua);
 	if ( luaL_loadfile(Lua, LUAFILENAME) )
-		LUAerror(Lua, "Cannot load config: %s\n", lua_tostring(Lua, -1));
+		LUAerror("Cannot load config: %s\n", lua_tostring(Lua, -1));
 	lua_pushnumber(Lua, colMax); // put number of particles on top of stack
 
 	//open files
@@ -68,19 +78,22 @@ int main()
 	momentum_file=fopen("output/momentum.dat","w");
 
 	//print simulation parameter in bash
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "		density	" << density << endl;
-	//cout << "		Temperature	" << temp << endl;
-	//cout << "		Number of Particles	" << colMax << endl;
-	//cout << "		Number of Integrationsteps	" << Time << endl;
-	//cout << "		Stepwidth	" << h << endl;
-	//cout << "		System Size	" << 2.0*lx << endl;
-	//cout << "		minimum distance (diagonal)	" << sqrt(2.0)*fcc << endl;
-	//cout << "		friction	" << friction << endl;
-	//cout << "		seed	" << seed << "	start	" << tstart << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
+	if ( printParams )
+	{
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "		density	" << density << endl;
+		cout << "		Temperature	" << temp << endl;
+		cout << "		Number of Particles	" << colMax << endl;
+		cout << "		Number of Integrationsteps	" << Time << endl;
+		cout << "		Stepwidth	" << h << endl;
+		cout << "		System Size	" << 2.0*lx << endl;
+		cout << "		minimum distance (diagonal)	" << sqrt(2.0)*fcc << endl;
+		cout << "		friction	" << friction << endl;
+		cout << "		seed	" << seed << "	start	" << tstart << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+	}
 
 	//Definition von Arrays fuer die Krafte auf jedes teilchen
 	double fx[colMax];
@@ -95,7 +108,7 @@ int main()
 	double L[colMax];
 	for(i=0; i<colMax; i++)
 	{
-		L[i]=0.0;
+		L[i] = 0.0;
 	};
 
 	//Initialize particles
@@ -109,35 +122,61 @@ int main()
 		calc_forces(&col[0],fx,fy);
 
 		//apply forces and move particles including stochastic displacement
-		integrate(&col[0],fx,fy,seed,L);
+		integrate(&col[0],fx,fy);
 
 		//measurements
-		printpos(&col[0], L, Lua);
+		printpos(&col[0]);
 	};
 
+	// Massen-Schwerpunkt R(t) und mean-velocity V(t)
+	double Rx, Ry, Vx, Vy = 0;
+	for (i=0; i<colMax; i++)
+	{
+		Rx += col[i].X;
+		Ry += col[i].Y;
+		Vx += col[i].VX;
+		Vy += col[i].VY;
+	}
+	Rx /= colMax;
+	Ry /= colMax;
+	Vx /= colMax;
+	Vy /= colMax;
+
+	// Drehimpuls zum letzten Zeitpunkt
+	for(i=0; i<colMax; i++)
+	{
+		L[i] = (col[i].X - Rx)*(col[i].VY - Vy) - (col[i].Y - Ry)*(col[i].VX - Vx);
+		fprintf(momentum_file,"%lf\n",L[i]);
+		lua_pushnumber(Lua, L[i]);
+	}
+
 	// Calc angular momentum stuff in LUA
-	LUACalcAngularMomentum(Lua, "angularMomentum.lua");
+	LUACalcAngularMomentum(LUAFILENAME);
 
 	// CLOSE STUFF
 	fclose(momentum_file);
 	fclose(pos_file); //schliesse files
 	time(&tend);
 	lua_close(Lua); // LUA schließen
+	gsl_rng_free(myRNG); // RNG
 
 	//print simulation parameter in bash
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "		density	" << density << endl;
-	//cout << "		Temperature	" << temp << endl;
-	//cout << "		Number of Particles	" << colMax << endl;
-	//cout << "		Number of Integrationsteps	" << Time << endl;
-	//cout << "		Stepwidth	" << h << endl;
-	//cout << "		System Size	" << lx << endl;
-	//cout << "		minimum distance (diagonal)	" << sqrt(2.0)*fcc << endl;
-	//cout << "		friction	" << friction << endl;
-	//cout << "		duration	" << tend-tstart << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
-	//cout << "--------------------------------------------------------------------------" << endl;
+	if ( printParams )
+	{
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "		density	" << density << endl;
+		cout << "		Temperature	" << temp << endl;
+		cout << "		Number of Particles	" << colMax << endl;
+		cout << "		Number of Integrationsteps	" << Time << endl;
+		cout << "		Stepwidth	" << h << endl;
+		cout << "		System Size	" << lx << endl;
+		cout << "		minimum distance (diagonal)	" << sqrt(2.0)*fcc << endl;
+		cout << "		friction	" << friction << endl;
+		cout << "		duration	" << tend-tstart << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+		cout << "--------------------------------------------------------------------------" << endl;
+	}
 
 	return(0);
 };

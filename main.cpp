@@ -28,13 +28,13 @@ double h=0.01;	//Integrationschrittweite
 double sh=sqrt(h);
 
 //Simulationbox
-int colMax=100; //Anzahl Teilchen
+int colMax=300; //Anzahl Teilchen
 double density=0.5;
 double friction=1.0;
 double volume=colMax/density;
 double lx=sqrt(volume)/2.0;
 double ly=lx;
-double temp=0.00001;
+double temp=0.04;
 double D=temp/friction;
 double varianz=2.0*D*h;
 double sqvarianz=sqrt(varianz);
@@ -122,11 +122,33 @@ int main()
 		calc_forces(&col[0],fx,fy);
 
 		//apply forces and move particles including stochastic displacement
-		integrate(&col[0],fx,fy,L);
+		integrate(&col[0],fx,fy);
 
 		//measurements
-		printpos(&col[0], L);
+		printpos(&col[0]);
 	};
+
+	// Massen-Schwerpunkt R(t) und mean-velocity V(t)
+	double Rx, Ry, Vx, Vy = 0;
+	for (i=0; i<colMax; i++)
+	{
+		Rx += col[i].X;
+		Ry += col[i].Y;
+		Vx += col[i].VX;
+		Vy += col[i].VY;
+	}
+	Rx /= colMax;
+	Ry /= colMax;
+	Vx /= colMax;
+	Vy /= colMax;
+
+	// Drehimpuls zum letzten Zeitpunkt
+	for(i=0; i<colMax; i++)
+	{
+		L[i] = (col[i].X - Rx)*(col[i].VY - Vy) - (col[i].Y - Ry)*(col[i].VX - Vx);
+		fprintf(momentum_file,"%lf\n",L[i]);
+		lua_pushnumber(Lua, L[i]);
+	}
 
 	// Calc angular momentum stuff in LUA
 	LUACalcAngularMomentum(LUAFILENAME);

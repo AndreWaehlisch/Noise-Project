@@ -1,8 +1,8 @@
 stats 'output/momentum.dat' u 1
 
-n=100
+n=30
 #if ( STATS_max > abs(STATS_min) ) max=STATS_max*1.5; else max=abs(STATS_min)*1.5
-max=1.3
+max=0.18
 min=-max
 width=(max-min)/n
 hist(x,width)=width*floor(x/width)+width/2.0

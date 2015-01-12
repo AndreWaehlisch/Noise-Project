@@ -13,14 +13,14 @@ class particle //: public box
 };
 
 // f_measure.cpp
-void printpos(particle a[], double L[]);
+void printpos(particle a[]);
 
 // f_metrik.cpp
 void initial(particle a[]);
 void distance(particle &a, particle &b, double &dist, double &dx, double &dy);
 
 // f_integrate.cp
-void integrate(particle a[], double fx[], double fy[], double L[]);
+void integrate(particle a[], double fx[], double fy[]);
 double gauss();
 
 //f_forces.cpp

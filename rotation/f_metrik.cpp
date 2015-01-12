@@ -34,7 +34,6 @@ void initial(particle col[])
 		col[i].VX=1.0;	//Einheitsgeschwindigkeiten
 		col[i].VY=1.0;
 	};
-//	printpos(&col[0],);
 }
 
 void particle::setposition(double &x, double &y)

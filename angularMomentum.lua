@@ -23,6 +23,8 @@ for i = 2, #data do
 	end;
 end;
 
+maxVal = 1
+
 for pointInTime = 0, steps-1 do
 	local offset = pointInTime * colMax + 1;
 
