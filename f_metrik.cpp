@@ -13,7 +13,7 @@
 #include <string.h>
 
 using namespace std;
-extern int i,j,colMax,h,seed;
+extern int colMax,h,seed;
 extern double lx,ly,volume,dpm;
 
 void distance(particle &a,particle &b, double &dist, double &dx, double &dy)
@@ -26,7 +26,7 @@ void distance(particle &a,particle &b, double &dist, double &dx, double &dy)
 void initial(particle col[])
 {
 	double x,y;
-	for(i=0; i<colMax; i++)
+	for(int i=0; i<colMax; i++)
 	{
 		x= 0;//rand() % 10;	//Zufallspositionenen
 		y= 0;//rand() % 10;
@@ -41,7 +41,6 @@ void particle::setposition(double &x, double &y)
 	X=x;
 	Y=y;
 }
-
 
 void particle::getposition(double &x, double &y)
 {

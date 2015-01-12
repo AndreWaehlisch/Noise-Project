@@ -14,28 +14,17 @@ end;
 -- put result data in file momentumLUA.dat (overwrite old data)
 local FILE = assert(io.open("./output/momentumLUA.dat","w+"));
 
-local maxVal = 0;
+--local maxVal = 0;
 
--- find max value
-for i = 2, #data do
-	if ( math.abs(data[i]) > maxVal ) then
-		maxVal = math.abs(data[i]);
-	end;
-end;
-
-maxVal = 1
+---- find max value
+--for i = 2, #data do
+	--if ( math.abs(data[i]) > maxVal ) then
+		--maxVal = math.abs(data[i]);
+	--end;
+--end;
 
 for pointInTime = 0, steps-1 do
 	local offset = pointInTime * colMax + 1;
-
-	--local maxVal = 0;
-
-	---- find max value
-	--for i = 1, colMax do
-		--if ( math.abs(data[offset+i]) > maxVal ) then
-			--maxVal = math.abs(data[offset+i]);
-		--end;
-	--end;
 
 	-- add (normalized) values to result data
 	for i = 1, colMax do

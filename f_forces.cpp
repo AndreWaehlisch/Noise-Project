@@ -14,16 +14,16 @@
 
 using namespace std;
 extern double dist,dx,dy;
-extern int i,j,colMax;
+extern int colMax;
 
 void calc_forces(particle a[], double fx[], double fy[])
 {
 	double dfx=0.0; //dummy
 	double dfy=0.0;
 	double fscale=100.0; //federkonstante
-	for(i=0; i<(colMax-1); i++)
+	for(int i=0; i<(colMax-1); i++)
 	{
-		for(j=i+1; j<colMax; j++)
+		for(int j=i+1; j<colMax; j++)
 		{
 			// distances between particles i and j
 			distance(a[i],a[j],dist,dx,dy);

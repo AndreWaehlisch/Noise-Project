@@ -23,7 +23,6 @@ using namespace std;
 ***************************************************************************************
 ***************************************************************************************/
 
-extern int i,j,l,k,n,t;
 extern double PI;
 extern double PI2;
 //integration parameter
@@ -42,14 +41,14 @@ double part=0.0;
 //Lua state
 extern lua_State *Lua;
 
-void printpos(particle a[])
+void printpos(particle a[], const int t)
 {
 	if ( t>=Time*part && t%qt==0 )
 	{
 
 		lua_checkstack(Lua, colMax); // ensure enough space in lua stack
 
-		for(i=0; i<colMax; i++)
+		for(int i=0; i<colMax; i++)
 		{
 			if ( !i )
 				fprintf(pos_file,"%lf",t*h);

@@ -6,7 +6,7 @@ import matplotlib.pyplot as p
 import os
 
 ############ run or evaluate ###################
-run=1 ## 1 heisst simulation starten
+run=0 ## 1 heisst simulation starten
 
 movie=1 ## snapshots machen?
 
@@ -76,6 +76,3 @@ if movie==1:
 			finished=True
 		else:
 			finished=False
-
-
-

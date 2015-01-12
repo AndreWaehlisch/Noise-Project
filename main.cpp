@@ -9,22 +9,22 @@
 #include <omp.h>
 #include <ctime>
 #include <complex>
-#include <string.h>
+#include <string>
 
 #include <lua5.2/lua.hpp>
 #include "head.h"
+#include <omp.h>
 
 using namespace std;
 
 //main buffer variablen
-int i,j,l,k,n;
 time_t tstart,tend,tseed;
 double PI=M_PI;
 double PI2=PI*0.5;
 //integration parameter
 int t=0;
 int Time=100000;	//Anzahl Integrationsschritte
-double h=0.01;	//Integrationschrittweite
+double h=0.001;	//Integrationschrittweite
 double sh=sqrt(h);
 
 //Simulationbox
@@ -34,10 +34,14 @@ double friction=1.0;
 double volume=colMax/density;
 double lx=sqrt(volume)/2.0;
 double ly=lx;
-double temp=0.04;
+
+double temp=0.067;
 double D=temp/friction;
 double varianz=2.0*D*h;
-double sqvarianz=sqrt(varianz);
+
+double sqvarianz;//=sqrt(varianz);
+#pragma omp threadprivate(sqvarianz)
+
 double fcc=(lx)/(sqrt((colMax)/2.0));
 
 //RNG
@@ -47,6 +51,8 @@ gsl_rng *myRNG;
 //Fileschreiberei
 FILE *pos_file;
 FILE *momentum_file;
+FILE *dispersion_parallel_file;
+FILE *dispersion_senkrecht_file;
 const char *LUAFILENAME = "angularMomentum.lua";
 
 //LUA instance
@@ -61,6 +67,11 @@ const int printParams = 0;
 
 int main()
 {
+	#ifdef _OPENMP
+		omp_set_num_threads( omp_get_num_procs() );
+		cout << "OMP LOADED" << endl;
+	#endif
+
 	//Systemzeit ist seed fuer den Zufallsgenerator
 	time(&tstart);
 	seed=int(tstart*h);
@@ -76,6 +87,20 @@ int main()
 	//open files
 	pos_file=fopen("output/position.dat","w");
 	momentum_file=fopen("output/momentum.dat","w");
+	dispersion_senkrecht_file=fopen("output/dispersion/senkrecht.dat","w");
+	dispersion_parallel_file=fopen("output/dispersion/parallel.dat","w");
+
+	// Table for temperatures we want
+	const double temp_Start = 0.000;
+	const double temp_End = 0.080;
+	const int N_temp = 20;
+	const double d_temp = (temp_End-temp_Start)/N_temp;
+	double temps[N_temp];
+
+	for(int i=0; i<N_temp; i++)
+	{
+		temps[i] = temp_Start + (i*d_temp);
+	}
 
 	//print simulation parameter in bash
 	if ( printParams )
@@ -95,66 +120,111 @@ int main()
 		cout << "--------------------------------------------------------------------------" << endl;
 	}
 
-	//Definition von Arrays fuer die Krafte auf jedes teilchen
-	double fx[colMax];
-	double fy[colMax];
-	for(i=0; i<colMax; i++)
-	{
-		fx[i]=0.0;
-		fy[i]=0.0;
-	};
-
 	//Definition von Arrays fuer den Drehimpuls jedes teilchens
 	double L[colMax];
-	for(i=0; i<colMax; i++)
+	for(int i=0; i<colMax; i++)
 	{
 		L[i] = 0.0;
 	};
 
-	//Initialize particles
-	vector<particle> col(colMax);	 //initialisiere die particle
-	initial(&col[0]);		//Gib den Teilchen eine Intitial Position
-
-	//Start Simulation
-	for(t=0;t<=Time;t++)  		//Schleife der Integrationsschritte
+	/////////////////////PARALLELIZATION /////////////////////////
+	#pragma omp parallel private(temp, D, varianz)
 	{
-		//calculate forces
-		calc_forces(&col[0],fx,fy);
+		#ifdef _OPENMP
+			#pragma omp single
+				cout << "Num Threads: " << omp_get_num_threads() << endl;
+		#endif
 
-		//apply forces and move particles including stochastic displacement
-		integrate(&col[0],fx,fy);
+		#pragma omp for schedule(auto)
+		for(int T=0; T<N_temp; T++)
+		{
+			temp = temps[T];
+			D=temp/friction;
+			varianz=2.0*D*h;
+			sqvarianz=sqrt(varianz);
 
-		//measurements
-		printpos(&col[0]);
-	};
+			//Definition von Arrays fuer die Krafte auf jedes teilchen
+			double fx[colMax];
+			double fy[colMax];
+			for(int i=0; i<colMax; i++)
+			{
+				fx[i]=0.0;
+				fy[i]=0.0;
+			};
 
-	// Massen-Schwerpunkt R(t) und mean-velocity V(t)
-	double Rx, Ry, Vx, Vy = 0;
-	for (i=0; i<colMax; i++)
-	{
-		Rx += col[i].X;
-		Ry += col[i].Y;
-		Vx += col[i].VX;
-		Vy += col[i].VY;
+			//Initialize particles
+			vector<particle> col(colMax);	 //initialisiere die particle
+			initial(&col[0]);		//Gib den Teilchen eine Intitial Position
+
+			//Start Simulation
+			for(t=0;t<=Time;t++)  		//Schleife der Integrationsschritte
+			{
+				//calculate forces
+				calc_forces(&col[0],fx,fy);
+
+				//apply forces and move particles including stochastic displacement
+				integrate(&col[0],fx,fy);
+
+				//measurements
+				//printpos(&col[0],t);
+			};
+
+			// Massen-Schwerpunkt R und mean-velocity V zum letzten Zeitpunkt
+			double Rx=0, Ry=0, Vx=0, Vy=0;
+			for (int i=0; i<colMax; i++)
+			{
+				Rx += col[i].X;
+				Ry += col[i].Y;
+				Vx += col[i].VX;
+				Vy += col[i].VY;
+			}
+			Rx /= colMax;
+			Ry /= colMax;
+			Vx /= colMax;
+			Vy /= colMax;
+
+			// DISPERSION
+			double Sp=0, Ss=0, S_i=0;
+			for(int i=0; i<colMax; i++)
+			{
+				S_i = (col[i].X-Rx)*Vx + (col[i].Y-Ry)*Vy;
+				S_i *= S_i;
+				Sp += S_i;
+
+				S_i = (col[i].X-Rx)*Vy - (col[i].Y-Ry)*Vx;
+				S_i *= S_i;
+				Ss += S_i;
+			}
+
+			Sp /= ( colMax*(Vx*Vx+Vy*Vy) );
+			Ss /= ( colMax*(Vx*Vx+Vy*Vy) );
+
+			#pragma omp critical(dispersion_parallel_file_dat)
+				fprintf(dispersion_parallel_file,"%lf %lf\n",temp,Sp);
+
+			#pragma omp critical(dispersion_senkrecht_file_dat)
+				fprintf(dispersion_senkrecht_file,"%lf %lf\n",temp,Ss);
+
+			#pragma omp critical(cout)
+				cout << "Temp done: " << temp << endl;
+		}
 	}
-	Rx /= colMax;
-	Ry /= colMax;
-	Vx /= colMax;
-	Vy /= colMax;
 
 	// Drehimpuls zum letzten Zeitpunkt
-	for(i=0; i<colMax; i++)
+	for(int i=0; i<colMax; i++)
 	{
-		L[i] = (col[i].X - Rx)*(col[i].VY - Vy) - (col[i].Y - Ry)*(col[i].VX - Vx);
-		fprintf(momentum_file,"%lf\n",L[i]);
-		lua_pushnumber(Lua, L[i]);
+	//	L[i] = (col[i].X - Rx)*(col[i].VY - Vy) - (col[i].Y - Ry)*(col[i].VX - Vx);
+	//	fprintf(momentum_file,"%lf\n",L[i]);
+	//	lua_pushnumber(Lua, L[i]);
 	}
 
 	// Calc angular momentum stuff in LUA
-	LUACalcAngularMomentum(LUAFILENAME);
+	//LUACalcAngularMomentum(LUAFILENAME);
 
 	// CLOSE STUFF
 	fclose(momentum_file);
+	fclose(dispersion_senkrecht_file);
+	fclose(dispersion_parallel_file);
 	fclose(pos_file); //schliesse files
 	time(&tend);
 	lua_close(Lua); // LUA schließen

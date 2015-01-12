@@ -13,7 +13,7 @@ class particle //: public box
 };
 
 // f_measure.cpp
-void printpos(particle a[]);
+void printpos(particle a[], const int t);
 
 // f_metrik.cpp
 void initial(particle a[]);

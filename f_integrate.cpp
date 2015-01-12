@@ -15,14 +15,16 @@
 
 using namespace std;
 
-extern int i,colMax;
-extern double h,sqvarianz,friction;
+extern int colMax;
+extern double h,friction;
+extern double sqvarianz;
+#pragma omp threadprivate(sqvarianz)
 extern gsl_rng *myRNG;
 
 //Integrationsroutine inkl self propulsion
 void integrate(particle a[],double fx[], double fy[])
 {
-	for(i=0; i<colMax; i++)
+	for(int i=0; i<colMax; i++)
 	{
 		fx[i]=(fx[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VX)*h/friction+sqvarianz*gauss();
 		fy[i]=(fy[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VY)*h/friction+sqvarianz*gauss();
