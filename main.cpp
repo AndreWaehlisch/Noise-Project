@@ -92,8 +92,8 @@ int main()
 
 	// Table for temperatures we want
 	const double temp_Start = 0.000;
-	const double temp_End = 0.080;
-	const int N_temp = 20;
+	const double temp_End = 0.090;
+	const int N_temp = 22;
 	const double d_temp = (temp_End-temp_Start)/N_temp;
 	double temps[N_temp];
 
