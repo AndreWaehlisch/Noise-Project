@@ -1,36 +1,22 @@
-#include <iostream>
 #include "head.h"
-#include <vector>
-#include <fstream>
-#include <stdio.h>
-#include <math.h>
-#include <cstdlib>
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <omp.h>
-#include <ctime>
-#include <complex>
-#include <string.h>
 
 using namespace std;
-extern double dist,dx,dy;
+extern double dx,dy;
 extern int colMax;
 
 void calc_forces(particle a[], double fx[], double fy[])
 {
-	double dfx=0.0; //dummy
-	double dfy=0.0;
-	double fscale=100.0; //federkonstante
-	for(int i=0; i<(colMax-1); i++)
+	double dfx = 0, dfy = 0; //dummy
+	double fscale = 100.0; //federkonstante
+	for(int i=0; i < (colMax-1); i++)
 	{
 		for(int j=i+1; j<colMax; j++)
 		{
 			// distances between particles i and j
-			distance(a[i],a[j],dist,dx,dy);
+			distance(a[i],a[j],dx,dy);
 
-			dfx=-fscale/colMax*dx;
-			dfy=-fscale/colMax*dy;
-
+			dfx = -fscale/colMax*dx;
+			dfy = -fscale/colMax*dy;
 
 			//ACTIO==REACTIO
 			fx[i] += dfx;

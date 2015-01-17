@@ -17,7 +17,7 @@ void printpos(particle a[], const int t);
 
 // f_metrik.cpp
 void initial(particle a[]);
-void distance(particle &a, particle &b, double &dist, double &dx, double &dy);
+void distance(particle &a, particle &b, double &dx, double &dy);
 
 // f_integrate.cp
 void integrate(particle a[], double fx[], double fy[]);
@@ -28,6 +28,7 @@ void calc_forces(particle a[],double fx[],double fy[]);
 
 //f_lua.cpp
 void LUAerror (const char *fmt, ...);
-void LUACalcAngularMomentum (const char *fname);
-#endif /* MYHEADER_H */
+void LUAExecute (const char *fname);
+double LUAGetConfigValue(const char *key);
 
+#endif /* MYHEADER_H */

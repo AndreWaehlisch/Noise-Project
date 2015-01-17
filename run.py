@@ -6,13 +6,17 @@ import matplotlib.pyplot as p
 import os
 
 ############ run or evaluate ###################
+compileProgram=1 ## 1 heisst programm kompilieren
+
 run=0 ## 1 heisst simulation starten
 
-movie=1 ## snapshots machen?
+movie=0 ## snapshots machen?
 
 ############		COMPILE	   AND 	RUN	PROGRAM		#################
-if run==1:
+if compileProgram==1:
 	os.system("make")
+
+if run==1:
 	os.system("./a.out")
 
 ####################		MAKING	MOVIE	 		#################
