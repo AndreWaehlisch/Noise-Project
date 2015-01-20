@@ -1,11 +1,34 @@
 #include "head.h"
 #include <omp.h>
+#include <cmath>
 
 using namespace std;
 
 extern int colMax;
 
-void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[])
+double CorrectedVariance(const double dR_mean, double dR_i[])
+{
+	double partA=0, partB=0;
+
+	#pragma omp parallel shared(partA, partB)
+	{
+		#pragma omp for schedule(auto)
+		for(int i=0; i<colMax; i++)
+		{
+			#pragma omp critical(partA)
+			partA += ( (dR_i[i]-dR_mean)*(dR_i[i]-dR_mean) );
+
+			#pragma omp critical(partB)
+			partB += ( dR_i[i] - dR_mean );
+		}
+	}
+
+	partB *= partB/colMax;
+
+	return (partA - partB) / colMax;
+}
+
+void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[], double& dR_output, double& Var_output)
 {
 	// Massen-Schwerpunkt R und mean-velocity V zum aktuellen Zeitpunkt
 	double Rx=0, Ry=0, Vx=0, Vy=0;
@@ -22,38 +45,53 @@ void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_
 	Vx /= colMax;
 	Vy /= colMax;
 
-	// Parallele, senkrechte Dispersion und Drehimpuls berechnen
-	double Sp=0, Ss=0;
+	// Parallele, senkrechte Dispersion, Mittlerer Abstand zum Schwerpunkt und Varianz davon
+	double Sp=0, Ss=0, dRx, dRy, dR=0, Var=0;
+	double dR_i[colMax];
 
-	#pragma omp parallel shared(Sp, Ss)
+	#pragma omp parallel shared(Sp, Ss, dR, dR_i) private(dRx, dRy)
 	{
 		double S_i = 0;
 
 		#pragma omp for schedule(auto)
 		for(int i=0; i<colMax; i++)
 		{
+			// Abstände zum Schwerpunkt
+			dRx = ( col[i].X - Rx);
+			dRy = ( col[i].Y - Ry);
+			dR_i[i] = sqrt( dRx*dRx + dRy*dRy );
+			#pragma omp critical(dR)
+				dR += dR_i[i];
+
+
 			// parallele Dispersion
-			S_i = (col[i].X-Rx)*Vx + (col[i].Y-Ry)*Vy;
+			S_i = dRx*Vx + dRy*Vy;
 			S_i *= S_i;
 			#pragma omp critical(Sp)
 				Sp += S_i;
 
 			// senkrechte Dispersion
-			S_i = (col[i].X-Rx)*Vy - (col[i].Y-Ry)*Vx;
+			S_i = dRx*Vy - dRy*Vx;
 			S_i *= S_i;
 			#pragma omp critical(Ss)
 				Ss += S_i;
 
 			// Drehimpuls (output wird einfach aufaddiert)
-			L_output[i] += (col[i].X - Rx)*(col[i].VY - Vy) - (col[i].Y - Ry)*(col[i].VX - Vx);
+			L_output[i] += dRx*(col[i].VY - Vy) - dRy*(col[i].VX - Vx);
 		}
 	}
 
-	// Normierung der Dispersion
+	// Normierung
 	Sp /= ( colMax*(Vx*Vx+Vy*Vy) );
 	Ss /= ( colMax*(Vx*Vx+Vy*Vy) );
+	dR /= colMax;
+
+	// Varianz berechnen
+	Var = CorrectedVariance(dR, dR_i);
 
 	// Output wird einfach aufaddiert
 	Sp_output += Sp;
 	Ss_output += Ss;
+	dR_output += dR;
+	Var_output += Var;
 }

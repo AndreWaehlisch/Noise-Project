@@ -1,10 +1,11 @@
 #!/bin/bash
 
-doCompile=false
-doNewRun=false
+doCompile=true
+doNewRun=true
 positionsMovies=true
 dispersion=true
 angularmomentumPlots=true
+variancePlots=true
 
 mkdir -p ./results/
 mkdir -p ./output/dispersion/
@@ -107,4 +108,15 @@ then
 	rm *.tmp
 
 	echo "Angular momentum plots done."
+fi
+
+#####################################
+#### dR_mean and variance plots
+#####################################
+
+if [ "$variancePlots" = true ]
+then
+	gnuplot variance_plot.plt
+
+	echo "Variance and dR_mean plot done."
 fi

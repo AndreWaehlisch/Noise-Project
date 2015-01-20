@@ -12,6 +12,8 @@
 *.cpp~
 *.orig
 *.tmp
+results_zero/config.lua
+results_random/config.lua
 
 # Compiled Object files
 *.slo

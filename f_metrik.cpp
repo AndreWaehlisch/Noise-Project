@@ -15,17 +15,36 @@ void distance(particle &a,particle &b, double &dx, double &dy)
 
 void initial(particle col[])
 {
+	const double factor = 2*M_PI / colMax;
+
 	for(int i=0; i<colMax; i++)
 	{
-		if ( rndInit )
+		if ( rndInit == 0 )
+		{
+			col[i].setposition(0, 0);
+		}
+		else if ( rndInit == 1 )
 		{
 			const double x = rand()%10, y = rand()%10;
 			col[i].setposition(x, y);
-		} else
-			col[i].setposition(0, 0);
+		}
+		else if ( rndInit == 2 )
+		{
+			const double x = cos( i * factor ) + 1;
+			const double y = sin( i * factor ) + 1;
+			col[i].setposition(x, y);
+		}
 
-		col[i].VX = 1.0;	//Einheitsgeschwindigkeiten
-		col[i].VY = 1.0;
+		if ( rndInit == 2 )
+		{
+			col[i].VX = sin( i * factor );
+			col[i].VY = -cos( i * factor );
+		}
+		else
+		{
+			col[i].VX = 1.0;	//Einheitsgeschwindigkeiten
+			col[i].VY = 1.0;
+		}
 	};
 }
 

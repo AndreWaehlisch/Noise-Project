@@ -21,14 +21,14 @@ double density = 0.5, friction = 1.;
 
 // Variablen (Setup in config.lua)
 int Time, colMax, temp_N, Mittelung;
-double dx, dy, h, temp_start, temp_d, temp, D, varianz, sqvarianz, rndInit;
+double dx, dy, h, temp_start, temp_d, temp, D, varianz, sqvarianz, rndInit, plotResolution;
 
 // RNG
 int seed=1;
 gsl_rng *myRNG;
 
 // Fileschreiberei
-ofstream dispersion_parallel_file, dispersion_senkrecht_file;
+ofstream dispersion_parallel_file, dispersion_senkrecht_file, variance_file, dR_mean_file;
 const char *LUAFILENAME = "config.lua";
 
 // LUA instance
@@ -39,6 +39,8 @@ void CloseStuff()
 {
 	dispersion_senkrecht_file.close();
 	dispersion_parallel_file.close();
+	dR_mean_file.close();
+	variance_file.close();
 	lua_close(Lua); // LUA schließen
 	gsl_rng_free(myRNG); // RNG
 }
@@ -64,6 +66,8 @@ int main()
 	//open output files
 	dispersion_senkrecht_file.open("output/dispersion/senkrecht.dat", ios::trunc);
 	dispersion_parallel_file.open("output/dispersion/parallel.dat", ios::trunc);
+	variance_file.open("output/variance.dat", ios::trunc);
+	dR_mean_file.open("output/dR_mean.dat", ios::trunc);
 
 	//LUA INIT
 	luaL_openlibs(Lua); // open libs in lua
@@ -86,6 +90,7 @@ int main()
 	temp_N			= 	LUAGetConfigValue("temp_N");
 	temp_start		= 	LUAGetConfigValue("temp_start");
 	temp_d			= 	LUAGetConfigValue("temp_d");
+	plotResolution	=	LUAGetConfigValue("plotResolution");
 
 	// Table for all temperatures we want
 	double temps[temp_N];
@@ -130,8 +135,8 @@ int main()
 		vector<particle> col(colMax);	 //initialisiere die particle
 		initial(&col[0]);		//Gib den Teilchen eine Intitial Position
 
-		// Dispersions-Werte
-		double Sp = 0, Ss = 0;
+		// Dispersions-Werte, mittlerer Schwerpunktsabstand und Varianz davon
+		double Sp = 0, Ss = 0, dR_mean=0, Var=0;
 
 		//Start Simulation
 		for(t=0; t<Time; t++)  		//Schleife der Integrationsschritte
@@ -147,19 +152,23 @@ int main()
 
 			//Dispersion im quasi-Gleichgewicht (wird über die letzten n=Mittelung Werte gemittelt)
 			if ( t > (Time-Mittelung) )
-				calcDispersionAndAngMomentum(&col[0], Sp, Ss, L);
+				calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var);
 		};
 
-		// Gemittelte Dispersionen und Drehimpuls sind bisher nur aufsummiert, hier noch normieren
+		// Gemittelte Werte sind bisher nur aufsummiert, hier noch normieren
 		Sp /= Mittelung;
 		Ss /= Mittelung;
+		dR_mean /= Mittelung;
+		Var /= Mittelung;
 
 		for(int i=0; i<colMax; i++)
 			momentum_file << (L[i] / Mittelung) << endl;
 
-		// put calculatet stuff in output files
+		// put calculated stuff in output files
 		dispersion_parallel_file << temp << '\t' << Sp << endl;
 		dispersion_senkrecht_file << temp << '\t' << Ss << endl;
+		dR_mean_file << temp << '\t' << dR_mean << endl;
+		variance_file << temp << '\t' << Var << endl;
 
 		cout << "Temp done: " << temp << endl;
 
