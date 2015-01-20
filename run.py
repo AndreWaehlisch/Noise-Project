@@ -8,7 +8,7 @@ import os
 ############ run or evaluate ###################
 compileProgram=1 ## 1 heisst programm kompilieren
 
-run=0 ## 1 heisst simulation starten
+run=1 ## 1 heisst simulation starten
 
 movie=0 ## snapshots machen?
 
@@ -17,11 +17,12 @@ if compileProgram==1:
 	os.system("make")
 
 if run==1:
+	os.system("mkdir -p output/dispersion")
 	os.system("./a.out")
 
 ####################		MAKING	MOVIE	 		#################
 if movie==1:
-	os.system("mkdir snapshots")
+	os.system("mkdir -p snapshots")
 
 	# Read in data from an ASCII data table
 	data = genfromtxt('./output/position.dat')
@@ -35,8 +36,9 @@ if movie==1:
 	L_max_y = 6.0
 
 	f=0
+	dif=5
 	while not finished:
-		f=f+10
+		f=f+dif
 		i=1
 		fin = False
 		grow = 0
@@ -76,7 +78,7 @@ if movie==1:
 		p.savefig(s)
 		p.clf() #clearing the figure. kein additives plotten!
 
-		if f == len(frames)-1:
+		if (f+dif) >= len(frames)-1:
 			finished=True
 		else:
 			finished=False

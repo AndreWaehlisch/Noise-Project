@@ -1,6 +1,6 @@
-# Pictures for slideshow
-snapshots/*
-snapshot*.png
+# pictures and movies
+*.png
+*.mp4
 
 # Result DATA
 *.dat
@@ -11,7 +11,7 @@ snapshot*.png
 # Temp files
 *.cpp~
 *.orig
-
+*.tmp
 
 # Compiled Object files
 *.slo

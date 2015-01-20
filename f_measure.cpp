@@ -1,33 +1,21 @@
 #include <iostream>
 #include <cstdio>
+#include <fstream>
 #include "head.h"
 
 using namespace std;
 
-//integration parameter
-extern int Time;
-extern double h;
-
-//Simulationbox
 extern int colMax;
+extern double h;
 extern FILE *pos_file;
 
-//control of printing events
-int qt=100;
-double part=0.0;
-
-void printpos(particle a[], const int t)
+void printpos(particle a[], const int t, ofstream& pos_file)
 {
-	if ( t>=Time*part && t%qt==0 )
+	if ( !(t%100) )
 	{
 		for(int i=0; i<colMax; i++)
-		{
-			if ( !i )
-				fprintf(pos_file,"%lf",t*h);
+			pos_file << '\t' << a[i].X << '\t' << a[i].Y;
 
-			fprintf(pos_file,"	%lf	%lf",a[i].X,a[i].Y);
-		};
-
-		fprintf(pos_file,"\n");
+		pos_file << endl;
 	}
 }

@@ -5,27 +5,31 @@
 using namespace std;
 
 extern int colMax;
+extern double rndInit;
 
 void distance(particle &a,particle &b, double &dx, double &dy)
 {
-	dx=(a.X)-(b.X);
-	dy=(a.Y)-(b.Y);
+	dx = (a.X)-(b.X);
+	dy = (a.Y)-(b.Y);
 }
 
 void initial(particle col[])
 {
-	double x,y;
 	for(int i=0; i<colMax; i++)
 	{
-		x= rand() % 10;	//Zufallspositionenen
-		y= rand() % 10;
-		col[i].setposition(x,y);
-		col[i].VX=1.0;	//Einheitsgeschwindigkeiten
-		col[i].VY=1.0;
+		if ( rndInit )
+		{
+			const double x = rand()%10, y = rand()%10;
+			col[i].setposition(x, y);
+		} else
+			col[i].setposition(0, 0);
+
+		col[i].VX = 1.0;	//Einheitsgeschwindigkeiten
+		col[i].VY = 1.0;
 	};
 }
 
-void particle::setposition(double &x, double &y)
+void particle::setposition(const double x, const double y)
 {
 	X=x;
 	Y=y;

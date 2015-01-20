@@ -1,6 +1,8 @@
 #ifndef MYHEADER_H
 #define MYHEADER_H
 
+#include <fstream>
+
 class particle //: public box
 {
 	public:
@@ -9,26 +11,32 @@ class particle //: public box
 	double VX;
 	double VY;
 	void getposition(double &x, double &y);
-	void setposition(double &x, double &y);
+	void setposition(const double x, const double y);
 };
 
 // f_measure.cpp
-void printpos(particle a[], const int t);
+void printpos(particle a[], const int t, std::ofstream& pos_file);
 
 // f_metrik.cpp
 void initial(particle a[]);
 void distance(particle &a, particle &b, double &dx, double &dy);
 
 // f_integrate.cp
-void integrate(particle a[], double fx[], double fy[]);
+void integrate(particle a[], double fx[], double fy[], const double sqvarianz);
 double gauss();
 
 //f_forces.cpp
-void calc_forces(particle a[],double fx[],double fy[]);
+void calc_forces(particle a[], double fx[], double fy[]);
 
 //f_lua.cpp
-void LUAerror (const char *fmt, ...);
-void LUAExecute (const char *fname);
+void LUAerror(const char *fmt, ...);
+void LUAExecute();
 double LUAGetConfigValue(const char *key);
+
+//f_calc.cpp
+void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[]);
+
+//f_main.cpp
+void CloseStuff();
 
 #endif /* MYHEADER_H */

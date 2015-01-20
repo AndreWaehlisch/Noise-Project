@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <lua5.2/lua.hpp>
+#include "head.h"
 
 using namespace std;
 
@@ -13,13 +14,13 @@ void LUAerror (const char *fmt, ...)
 	va_start(argp, fmt);
 	vfprintf(stderr, fmt, argp);
 	va_end(argp);
-	lua_close(Lua);
+	CloseStuff();
 	exit(EXIT_FAILURE);
 }
 
-void LUAExecute (const char *fname)
+void LUAExecute ()
 {
-	// execute lua file "fname" (LUA_MULTRET=push all return values)
+	// execute lua file (LUA_MULTRET=push all return values)
 	if ( lua_pcall(Lua, lua_gettop(Lua)-1, LUA_MULTRET, 0) )
 		LUAerror("Cannot run config: %s\n", lua_tostring(Lua, -1));
 }
