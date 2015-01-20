@@ -7,7 +7,6 @@ using namespace std;
 
 extern int colMax;
 extern double h, plotResolution;
-extern FILE *pos_file;
 
 void printpos(particle a[], const int t, ofstream& pos_file)
 {

@@ -2,6 +2,7 @@
 #define MYHEADER_H
 
 #include <fstream>
+#include <gsl/gsl_rng.h>
 
 class particle //: public box
 {
@@ -22,11 +23,11 @@ void initial(particle a[]);
 void distance(particle &a, particle &b, double &dx, double &dy);
 
 // f_integrate.cp
-void integrate(particle a[], double fx[], double fy[], const double sqvarianz);
+void integrate(particle a[], double fx[], double fy[], const double sqvarianz, gsl_rng *myRNG);
 double gauss();
 
 //f_forces.cpp
-void calc_forces(particle a[], double fx[], double fy[]);
+void calc_forces(particle a[], double fx[], double fy[], double &dx, double &dy);
 
 //f_lua.cpp
 void LUAerror(const char *fmt, ...);

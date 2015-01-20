@@ -1,13 +1,15 @@
 #include "head.h"
 
 using namespace std;
-extern double dx,dy;
+
 extern int colMax;
 
-void calc_forces(particle a[], double fx[], double fy[])
+const double fscale = 100.0; //federkonstante
+
+void calc_forces(particle a[], double fx[], double fy[], double &dx, double &dy)
 {
 	double dfx = 0, dfy = 0; //dummy
-	double fscale = 100.0; //federkonstante
+
 	for(int i=0; i < (colMax-1); i++)
 	{
 		for(int j=i+1; j<colMax; j++)

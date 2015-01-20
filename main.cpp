@@ -16,16 +16,11 @@
 using namespace std;
 
 // Globals
-int t = 0;
 double density = 0.5, friction = 1.;
 
 // Variablen (Setup in config.lua)
 int Time, colMax, temp_N, Mittelung;
-double dx, dy, h, temp_start, temp_d, temp, D, varianz, sqvarianz, rndInit, plotResolution;
-
-// RNG
-int seed=1;
-gsl_rng *myRNG;
+double h, temp_start, temp_d, temp, D, varianz, sqvarianz, rndInit, plotResolution;
 
 // Fileschreiberei
 ofstream dispersion_parallel_file, dispersion_senkrecht_file, variance_file, dR_mean_file;
@@ -42,26 +37,19 @@ void CloseStuff()
 	dR_mean_file.close();
 	variance_file.close();
 	lua_close(Lua); // LUA schließen
-	gsl_rng_free(myRNG); // RNG
 }
 
 int main()
 {
 	// Setup OpenMP
 	#ifdef _OPENMP
-		if ( omp_get_num_procs() == 8 )
-			omp_set_num_threads(7);
-		else
-			omp_set_num_threads( omp_get_num_procs() );
+		omp_set_num_threads( omp_get_num_procs() );
 		cout << "OMP LOADED" << endl;
 	#endif
 
-	//Systemzeit ist seed fuer den Zufallsgenerator
+	// System-Zeit ist seed für den RNG
 	time_t tstart;
 	time(&tstart);
-	seed = int(tstart*h);
-	myRNG = gsl_rng_alloc(gsl_rng_mt19937);
-	gsl_rng_set(myRNG,seed);
 
 	//open output files
 	dispersion_senkrecht_file.open("output/dispersion/senkrecht.dat", ios::trunc);
@@ -100,80 +88,97 @@ int main()
 		temps[i] = temp_start + (i*temp_d);
 	}
 
-	//Definition von Arrays fuer den Drehimpuls jedes teilchens
-	double L[colMax];
-	for(int i=0; i<colMax; i++)
+	#pragma omp parallel private(temp, D, varianz, sqvarianz)
 	{
-		L[i] = 0.0;
-	};
+		//Definition von Arrays fuer den Drehimpuls jedes teilchens
+		double L[colMax];
 
-	for(int T=0; T < temp_N; T++)
-	{
-		temp = temps[T];
-		D=temp/friction;
-		varianz=2.0*D*h;
-		sqvarianz=sqrt(varianz);
-
-		ostringstream posFileName;
-		posFileName << "output/position_" << temp << ".dat";
-		ofstream pos_file(posFileName.str(), ios::trunc);
-
-		ostringstream momentumFileName;
-		momentumFileName << "output/momentum_" << temp << ".dat";
-		ofstream momentum_file(momentumFileName.str(), ios::trunc);
-
-		//Definition von Arrays fuer die Krafte auf jedes teilchen
-		double fx[colMax];
-		double fy[colMax];
 		for(int i=0; i<colMax; i++)
 		{
-			fx[i]=0.0;
-			fy[i]=0.0;
+			L[i] = 0.0;
 		};
 
-		//Initialize particles
-		vector<particle> col(colMax);	 //initialisiere die particle
-		initial(&col[0]);		//Gib den Teilchen eine Intitial Position
-
-		// Dispersions-Werte, mittlerer Schwerpunktsabstand und Varianz davon
-		double Sp = 0, Ss = 0, dR_mean=0, Var=0;
-
-		//Start Simulation
-		for(t=0; t<Time; t++)  		//Schleife der Integrationsschritte
+		#pragma omp for schedule(auto)
+		for(int T=0; T < temp_N; T++)
 		{
-			//calculate forces
-			calc_forces(&col[0], fx, fy);
+			// rng stuff (per temperature!)
+			gsl_rng *myRNG;
+			const int seed = 1;//int(tstart*h);
+			myRNG = gsl_rng_alloc(gsl_rng_mt19937);
+			gsl_rng_set(myRNG,seed);
 
-			//apply forces and move particles including stochastic displacement
-			integrate(&col[0], fx, fy, sqvarianz);
+			double dx=0, dy=0;
+			temp = temps[T];
+			D=temp/friction;
+			varianz=2.0*D*h;
+			sqvarianz=sqrt(varianz);
 
-			//write position data to file
-			printpos(&col[0], t, pos_file);
+			ostringstream posFileName;
+			posFileName << "output/position_" << temp << ".dat";
+			ofstream pos_file(posFileName.str(), ios::trunc);
 
-			//Dispersion im quasi-Gleichgewicht (wird über die letzten n=Mittelung Werte gemittelt)
-			if ( t > (Time-Mittelung) )
-				calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var);
-		};
+			ostringstream momentumFileName;
+			momentumFileName << "output/momentum_" << temp << ".dat";
+			ofstream momentum_file(momentumFileName.str(), ios::trunc);
 
-		// Gemittelte Werte sind bisher nur aufsummiert, hier noch normieren
-		Sp /= Mittelung;
-		Ss /= Mittelung;
-		dR_mean /= Mittelung;
-		Var /= Mittelung;
+			//Definition von Arrays fuer die Krafte auf jedes teilchen
+			double fx[colMax];
+			double fy[colMax];
+			for(int i=0; i<colMax; i++)
+			{
+				fx[i]=0.0;
+				fy[i]=0.0;
+			};
 
-		for(int i=0; i<colMax; i++)
-			momentum_file << (L[i] / Mittelung) << endl;
+			//Initialize particles
+			vector<particle> col(colMax);	 //initialisiere die particle
+			initial(&col[0]);		//Gib den Teilchen eine Intitial Position
 
-		// put calculated stuff in output files
-		dispersion_parallel_file << temp << '\t' << Sp << endl;
-		dispersion_senkrecht_file << temp << '\t' << Ss << endl;
-		dR_mean_file << temp << '\t' << dR_mean << endl;
-		variance_file << temp << '\t' << Var << endl;
+			// Dispersions-Werte, mittlerer Schwerpunktsabstand und Varianz davon
+			double Sp = 0, Ss = 0, dR_mean=0, Var=0;
 
-		cout << "Temp done: " << temp << endl;
+			//Start Simulation
+			for(int t=0; t<Time; t++)  		//Schleife der Integrationsschritte
+			{
+				//calculate forces
+				calc_forces(&col[0], fx, fy, dx, dy);
 
-		pos_file.close();
-		momentum_file.close();
+				//apply forces and move particles including stochastic displacement
+				integrate(&col[0], fx, fy, sqvarianz, myRNG);
+
+				//write position data to file
+				printpos(&col[0], t, pos_file);
+
+				//Dispersion im quasi-Gleichgewicht (wird über die letzten n=Mittelung Werte gemittelt)
+				if ( t > (Time-Mittelung) )
+					calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var);
+			};
+
+			// Gemittelte Werte sind bisher nur aufsummiert, hier noch normieren
+			Sp /= Mittelung;
+			Ss /= Mittelung;
+			dR_mean /= Mittelung;
+			Var /= Mittelung;
+
+			for(int i=0; i<colMax; i++)
+				momentum_file << (L[i] / Mittelung) << endl;
+
+			// put calculated stuff in output files
+			#pragma omp critical(dispersion_parallel_file)
+				dispersion_parallel_file << temp << '\t' << Sp << endl;
+			#pragma omp critical(dispersion_senkrecht_file)
+				dispersion_senkrecht_file << temp << '\t' << Ss << endl;
+			#pragma omp critical(dR_mean_file)
+				dR_mean_file << temp << '\t' << dR_mean << endl;
+			#pragma omp critical(variance_file)
+				variance_file << temp << '\t' << Var << endl;
+			#pragma omp critical(cout)
+				cout << "Temp done: " << temp << endl;
+
+			pos_file.close();
+			momentum_file.close();
+			gsl_rng_free(myRNG); // RNG
+		}
 	}
 
 	CloseStuff(); // close files, lua state, rng, etc.

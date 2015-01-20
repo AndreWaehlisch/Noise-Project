@@ -10,17 +10,10 @@ double CorrectedVariance(const double dR_mean, double dR_i[])
 {
 	double partA=0, partB=0;
 
-	#pragma omp parallel shared(partA, partB)
+	for(int i=0; i<colMax; i++)
 	{
-		#pragma omp for schedule(auto)
-		for(int i=0; i<colMax; i++)
-		{
-			#pragma omp critical(partA)
-			partA += ( (dR_i[i]-dR_mean)*(dR_i[i]-dR_mean) );
-
-			#pragma omp critical(partB)
-			partB += ( dR_i[i] - dR_mean );
-		}
+		partA += ( (dR_i[i]-dR_mean)*(dR_i[i]-dR_mean) );
+		partB += ( dR_i[i] - dR_mean );
 	}
 
 	partB *= partB/colMax;

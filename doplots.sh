@@ -2,7 +2,7 @@
 
 doCompile=true
 doNewRun=true
-positionsMovies=true
+positionsMovies=false
 dispersion=true
 angularmomentumPlots=true
 variancePlots=true
@@ -14,7 +14,8 @@ mkdir -p ./snapshots/
 # compile
 if [ "$doCompile" = true ]
 then
-	g++ -Wall -Wextra -O3 f_calc.cpp f_lua.cpp f_measure.cpp f_metrik.cpp f_integrate.cpp main.cpp f_forces.cpp -lm -lgsl -lgslcblas -llua5.2 -fopenmp -std=c++11
+	g++ -Wall -Wextra -O3 f_calc.cpp f_lua.cpp f_measure.cpp f_metrik.cpp f_integrate.cpp main.cpp f_forces.cpp -lm -lgsl -lgslcblas -llua5.2 -std=c++11 -Wno-unknown-pragmas -fopenmp
+	echo "Compilation Done."
 fi
 
 # generate new output
@@ -116,6 +117,8 @@ fi
 
 if [ "$variancePlots" = true ]
 then
+	sort -n ./output/dR_mean.dat > ./output/dR_mean_sorted.dat
+	sort -n ./output/variance.dat > ./output/variance_sorted.dat
 	gnuplot variance_plot.plt
 
 	echo "Variance and dR_mean plot done."

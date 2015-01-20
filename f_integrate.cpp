@@ -8,33 +8,42 @@ using namespace std;
 
 extern int colMax;
 extern double h, friction;
-extern gsl_rng *myRNG;
 
-//Integrationsroutine inkl self propulsion
-void integrate(particle a[], double fx[], double fy[], const double sqvarianz)
+//Gaussche Zufallszahlen (Varianz = 1)
+double gauss(gsl_rng *myRNG)
 {
-	#pragma omp parallel
+	return gsl_ran_gaussian(myRNG, 1.0);
+}
+
+//Zufallszahlen generieren für Parallel-Loop
+void generateRandomNumberChain(double random[], gsl_rng *myRNG)
+{
+	for(int i=0; i < (colMax*2); i++)
 	{
-		#pragma omp for schedule(auto)
-		for(int i=0; i<colMax; i++)
-		{
-			fx[i]=(fx[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VX)*h/friction+sqvarianz*gauss();
-			fy[i]=(fy[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VY)*h/friction+sqvarianz*gauss();
-
-			a[i].VX=a[i].VX+fx[i];
-			a[i].VY=a[i].VY+fy[i];
-
-			a[i].X=a[i].X+a[i].VX*h;
-			a[i].Y=a[i].Y+a[i].VY*h;
-
-			fx[i]=0.0; //reset forces
-			fy[i]=0.0;
-		};
+		random[i] = gauss(myRNG);
 	}
 }
 
-//Gaussche Zufallszahlen (Varianz = 1)
-double gauss()
+//Integrationsroutine inkl self propulsion
+void integrate(particle a[], double fx[], double fy[], const double sqvarianz, gsl_rng *myRNG)
 {
-	return gsl_ran_gaussian(myRNG, 1.0);
+	double random[2*colMax];
+
+	#pragma omp critical(RNG)
+		generateRandomNumberChain(random, myRNG);
+
+	for(int i=0; i<colMax; i++)
+	{
+		fx[i]=(fx[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VX)*h/friction+sqvarianz*random[i*2];
+		fy[i]=(fy[i]+(1.0-(a[i].VX*a[i].VX+a[i].VY*a[i].VY))*a[i].VY)*h/friction+sqvarianz*random[i*2+1];
+
+		a[i].VX=a[i].VX+fx[i];
+		a[i].VY=a[i].VY+fy[i];
+
+		a[i].X=a[i].X+a[i].VX*h;
+		a[i].Y=a[i].Y+a[i].VY*h;
+
+		fx[i]=0.0; //reset forces
+		fy[i]=0.0;
+	}
 }
