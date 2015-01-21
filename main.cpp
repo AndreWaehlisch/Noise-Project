@@ -43,7 +43,7 @@ int main()
 {
 	// Setup OpenMP
 	#ifdef _OPENMP
-		omp_set_num_threads( omp_get_num_procs() );
+		omp_set_num_threads( 7 ); //omp_get_num_procs()
 		cout << "OMP LOADED" << endl;
 	#endif
 
@@ -103,7 +103,7 @@ int main()
 		{
 			// rng stuff (per temperature!)
 			gsl_rng *myRNG;
-			const int seed = 1;//int(tstart*h);
+			const int seed = int(tstart*h);
 			myRNG = gsl_rng_alloc(gsl_rng_mt19937);
 			gsl_rng_set(myRNG,seed);
 

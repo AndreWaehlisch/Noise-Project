@@ -1,15 +1,17 @@
 #!/bin/bash
 
-doCompile=true
+doCompile=false
 doNewRun=true
-positionsMovies=false
+positionsMovies=true
 dispersion=true
 angularmomentumPlots=true
 variancePlots=true
 
-mkdir -p ./results/
-mkdir -p ./output/dispersion/
-mkdir -p ./snapshots/
+# cleanup of old data
+rm -rf ./results/
+rm -rf ./output/
+rm -rf ./snapshots/
+rm -f *.tmp
 
 # compile
 if [ "$doCompile" = true ]
@@ -18,11 +20,21 @@ then
 	echo "Compilation Done."
 fi
 
+# make new folder structure
+mkdir -p ./results/
+mkdir -p ./output/dispersion/
+mkdir -p ./snapshots/
+
+
 # generate new output
 if [ "$doNewRun" = true ]
 then
 	./a.out
 fi
+
+# copy config file
+
+cp config.lua ./results/
 
 #####################################
 #### Position pictures and movies
