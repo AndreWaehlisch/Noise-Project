@@ -1,6 +1,6 @@
 #!/bin/bash
 
-doCompile=false
+doCompile=true
 doNewRun=true
 positionsMovies=true
 dispersion=true

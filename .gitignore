@@ -9,10 +9,13 @@
 *.cpp~
 *.orig
 *.tmp
-results_zero/config.lua
-results_rnd/config.lua
 results_circle/config.lua
 results_circle_biggertemps/config.lua
+results_rnd/config.lua
+results_rnd_biggertemps/config.lua
+results_zero/config.lua
+results_zero_smalltemps/config.lua
+results_zero_biggertemps/config.lua
 
 # Compiled Object files
 *.slo

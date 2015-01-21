@@ -43,7 +43,7 @@ int main()
 {
 	// Setup OpenMP
 	#ifdef _OPENMP
-		omp_set_num_threads( 7 ); //omp_get_num_procs()
+		omp_set_num_threads( omp_get_num_procs()-1 );
 		cout << "OMP LOADED" << endl;
 	#endif
 
