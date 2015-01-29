@@ -19,8 +19,8 @@ set output outputfile
 
 set xrange[min:max]
 
-set xlabel '|L|'
-set ylabel 'N' #'P(|L|)'
+set xlabel 'L'
+set ylabel 'N(L)' #'P(|L|)'
 set title mytitle
 unset key
 

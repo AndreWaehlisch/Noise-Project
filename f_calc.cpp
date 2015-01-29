@@ -18,10 +18,10 @@ double CorrectedVariance(const double dR_mean, double dR_i[])
 
 	partB *= partB/colMax;
 
-	return (partA - partB) / colMax;
+	return (partA - partB) / (colMax-1);
 }
 
-void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[], double& dR_output, double& Var_output)
+void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[], double& dR_output, double& Var_output, double& V_output)
 {
 	// Massen-Schwerpunkt R und mean-velocity V zum aktuellen Zeitpunkt
 	double Rx=0, Ry=0, Vx=0, Vy=0;
@@ -37,6 +37,9 @@ void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_
 	Ry /= colMax;
 	Vx /= colMax;
 	Vy /= colMax;
+
+	#pragma omp critical(V_output)
+	V_output += sqrt(Vx*Vx + Vy*Vy);
 
 	// Parallele, senkrechte Dispersion, Mittlerer Abstand zum Schwerpunkt und Varianz davon
 	double Sp=0, Ss=0, dRx, dRy, dR=0, Var=0;

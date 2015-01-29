@@ -4,14 +4,17 @@ doCompile=true
 doNewRun=true
 positionsMovies=true
 dispersion=true
-angularmomentumPlots=true
-variancePlots=true
+angularmomentumPlots=false
+variancePlots=false
 
 # cleanup of old data
-rm -rf ./results/
-rm -rf ./output/
-rm -rf ./snapshots/
 rm -f *.tmp
+if [ "$doNewRun" = true ]
+then
+	rm -rf ./results/
+	rm -rf ./output/
+	rm -rf ./snapshots/
+fi
 
 # compile
 if [ "$doCompile" = true ]
@@ -24,7 +27,6 @@ fi
 mkdir -p ./results/
 mkdir -p ./output/dispersion/
 mkdir -p ./snapshots/
-
 
 # generate new output
 if [ "$doNewRun" = true ]
@@ -74,7 +76,7 @@ then
 
 		mkdir -p "./results/${Temp}/"
 
-		avconv -y -framerate 25 -i "./snapshots/${Temp}/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}.mp4"
+		avconv -y -framerate 122 -i "./snapshots/${Temp}/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}.mp4"
 
 		echo "Temp done: ${Temp}"
 

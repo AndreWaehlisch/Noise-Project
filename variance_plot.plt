@@ -1,6 +1,8 @@
 set terminal png
 set xlabel 'D'
 
+set size square
+
 set ylabel 'Varianz'
 set output './results/variance.png'
 plot './output/variance_sorted.dat' w l

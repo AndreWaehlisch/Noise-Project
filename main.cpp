@@ -23,7 +23,7 @@ int Time, colMax, temp_N, Mittelung;
 double h, temp_start, temp_d, temp, D, varianz, sqvarianz, rndInit, plotResolution;
 
 // Fileschreiberei
-ofstream dispersion_parallel_file, dispersion_senkrecht_file, variance_file, dR_mean_file;
+ofstream dispersion_parallel_file, dispersion_senkrecht_file, variance_file, dR_mean_file, V_mean_file;
 const char *LUAFILENAME = "config.lua";
 
 // LUA instance
@@ -36,6 +36,7 @@ void CloseStuff()
 	dispersion_parallel_file.close();
 	dR_mean_file.close();
 	variance_file.close();
+	V_mean_file.close();
 	lua_close(Lua); // LUA schließen
 }
 
@@ -56,6 +57,7 @@ int main()
 	dispersion_parallel_file.open("output/dispersion/parallel.dat", ios::trunc);
 	variance_file.open("output/variance.dat", ios::trunc);
 	dR_mean_file.open("output/dR_mean.dat", ios::trunc);
+	V_mean_file.open("output/V_mean.dat", ios::trunc);
 
 	//LUA INIT
 	luaL_openlibs(Lua); // open libs in lua
@@ -84,9 +86,7 @@ int main()
 	double temps[temp_N];
 
 	for(int i=0; i<temp_N; i++)
-	{
 		temps[i] = temp_start + (i*temp_d);
-	}
 
 	#pragma omp parallel private(temp, D, varianz, sqvarianz)
 	{
@@ -135,7 +135,7 @@ int main()
 			initial(&col[0]);		//Gib den Teilchen eine Intitial Position
 
 			// Dispersions-Werte, mittlerer Schwerpunktsabstand und Varianz davon
-			double Sp = 0, Ss = 0, dR_mean=0, Var=0;
+			double Sp = 0, Ss = 0, dR_mean=0, Var=0, V_mean=0;
 
 			//Start Simulation
 			for(int t=0; t<Time; t++)  		//Schleife der Integrationsschritte
@@ -151,7 +151,7 @@ int main()
 
 				//Dispersion im quasi-Gleichgewicht (wird über die letzten n=Mittelung Werte gemittelt)
 				if ( t > (Time-Mittelung) )
-					calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var);
+					calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var, V_mean);
 			};
 
 			// Gemittelte Werte sind bisher nur aufsummiert, hier noch normieren
@@ -159,6 +159,7 @@ int main()
 			Ss /= Mittelung;
 			dR_mean /= Mittelung;
 			Var /= Mittelung;
+			V_mean /= Mittelung;
 
 			for(int i=0; i<colMax; i++)
 				momentum_file << (L[i] / Mittelung) << endl;
@@ -172,6 +173,8 @@ int main()
 				dR_mean_file << temp << '\t' << dR_mean << endl;
 			#pragma omp critical(variance_file)
 				variance_file << temp << '\t' << Var << endl;
+			#pragma omp critical(V_mean_file)
+				V_mean_file << temp << '\t' << V_mean << endl;
 			#pragma omp critical(cout)
 				cout << "Temp done: " << temp << endl;
 

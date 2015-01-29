@@ -1,6 +1,8 @@
 set terminal png
 set output 'results/dispersion.png'
 
+set size square
+
 set xlabel 'D'
 set ylabel 'dispersion'
 

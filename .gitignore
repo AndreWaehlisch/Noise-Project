@@ -1,6 +1,7 @@
 # pictures and movies
 *.png
 *.mp4
+*.avi
 
 # Result DATA
 *.dat
@@ -16,6 +17,7 @@ results_rnd_biggertemps/config.lua
 results_zero/config.lua
 results_zero_smalltemps/config.lua
 results_zero_biggertemps/config.lua
+results/config.lua
 
 # Compiled Object files
 *.slo
