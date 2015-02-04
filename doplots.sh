@@ -1,11 +1,13 @@
 #!/bin/bash
 
-doCompile=true
+doCompile=false
 doNewRun=true
 positionsMovies=true
-dispersion=true
+dispersion=false
 angularmomentumPlots=false
 variancePlots=false
+
+whenDoingMoviesDontRedoPlots=false
 
 # cleanup of old data
 rm -f *.tmp
@@ -32,6 +34,7 @@ mkdir -p ./snapshots/
 if [ "$doNewRun" = true ]
 then
 	./a.out
+	echo "Run done."
 fi
 
 # copy config file
@@ -45,7 +48,7 @@ cp config.lua ./results/
 if [ "$positionsMovies" = true ]
 then
 	#get number of columns (just use first position.dat here, they are all the same)
-	numCols="$(awk '{print NF; exit}' ./output/position_0.dat)"
+	numCols="$(awk '{print NF; exit}' ./output/position_0.028.dat)"
 
 	for positionFile in ./output/position_*.dat
 	do
@@ -61,22 +64,29 @@ then
 		maxValue=$(LC_ALL=C cat "./output/position_${Temp}.dat" | sed 's!\s!\n!g' | sort -rg | head -1)
 
 		#create sub-dir for Temp
-		mkdir -p "./snapshots/${Temp}/"
+		mkdir -p "./snapshots/${Temp}/moving/"
+		mkdir -p "./snapshots/${Temp}/fixed/"
 
-		while read PositionLine
-		do
-			Time=$((${Time}+1))
+		if [ "$whenDoingMoviesDontRedoPlots" = false ]
+		then
+			while read PositionLine
+			do
+				Time=$((${Time}+1))
 
-			#get the current positions data and write it to plot.tmp
-			echo "${PositionLine}" > plot.tmp
+				#get the current positions data and write it to plot.tmp
+				echo "${PositionLine}" > plot.tmp
 
-			#plot that data
-			gnuplot -e "maxValue=${maxValue}; Temp=${Temp}; Time=${Time}; numCols=${numCols}" './position_plot.plt'
-		done < "./output/position_${Temp}.dat"
+				#plot that data
+				gnuplot -e "maxValue=${maxValue}; Temp=${Temp}; Time=${Time}; numCols=${numCols}" './position_plot.plt'
+				gnuplot -e "maxValue=0; Temp=${Temp}; Time=${Time}; numCols=${numCols}" './position_plot.plt'
+			done < "./output/position_${Temp}.dat"
+		fi
 
 		mkdir -p "./results/${Temp}/"
 
-		avconv -y -framerate 122 -i "./snapshots/${Temp}/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}.mp4"
+		avconv -y -framerate 2 -i "./snapshots/${Temp}/fixed/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}fixed.avi"
+		avconv -y -framerate 2 -i "./snapshots/${Temp}/moving/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}moving.avi"
+		avconv -y -i "./results/${Temp}/${Temp}fixed.avi" -i "./results/${Temp}/${Temp}moving.avi" -filter_complex "[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w" "./results/${Temp}/${Temp}.avi"
 
 		echo "Temp done: ${Temp}"
 

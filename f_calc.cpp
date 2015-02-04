@@ -21,7 +21,7 @@ double CorrectedVariance(const double dR_mean, double dR_i[])
 	return (partA - partB) / (colMax-1);
 }
 
-void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[], double& dR_output, double& Var_output, double& V_output)
+void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double& dR_output, double& Var_output, double& V_output, ofstream& momentum_file)
 {
 	// Massen-Schwerpunkt R und mean-velocity V zum aktuellen Zeitpunkt
 	double Rx=0, Ry=0, Vx=0, Vy=0;
@@ -39,7 +39,7 @@ void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_
 	Vy /= colMax;
 
 	#pragma omp critical(V_output)
-	V_output += sqrt(Vx*Vx + Vy*Vy);
+		V_output += sqrt(Vx*Vx + Vy*Vy);
 
 	// Parallele, senkrechte Dispersion, Mittlerer Abstand zum Schwerpunkt und Varianz davon
 	double Sp=0, Ss=0, dRx, dRy, dR=0, Var=0;
@@ -59,7 +59,6 @@ void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_
 			#pragma omp critical(dR)
 				dR += dR_i[i];
 
-
 			// parallele Dispersion
 			S_i = dRx*Vx + dRy*Vy;
 			S_i *= S_i;
@@ -72,8 +71,9 @@ void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_
 			#pragma omp critical(Ss)
 				Ss += S_i;
 
-			// Drehimpuls (output wird einfach aufaddiert)
-			L_output[i] += dRx*(col[i].VY - Vy) - dRy*(col[i].VX - Vx);
+			// Drehimpuls
+			#pragma omp critical(momentum_file)
+				momentum_file << dRx*(col[i].VY - Vy) - dRy*(col[i].VX - Vx) << endl;
 		}
 	}
 

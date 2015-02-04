@@ -35,7 +35,7 @@ void LUAExecute();
 double LUAGetConfigValue(const char *key);
 
 //f_calc.cpp
-void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double L_output[], double& dR_output, double& Var_output, double& V_mean);
+void calcDispersionAndAngMomentum(particle col[], double& Sp_output, double& Ss_output, double& dR_output, double& Var_output, double& V_mean, std::ofstream& momentum_file);
 
 //f_main.cpp
 void CloseStuff();

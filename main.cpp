@@ -90,14 +90,6 @@ int main()
 
 	#pragma omp parallel private(temp, D, varianz, sqvarianz)
 	{
-		//Definition von Arrays fuer den Drehimpuls jedes teilchens
-		double L[colMax];
-
-		for(int i=0; i<colMax; i++)
-		{
-			L[i] = 0.0;
-		};
-
 		#pragma omp for schedule(auto)
 		for(int T=0; T < temp_N; T++)
 		{
@@ -151,7 +143,7 @@ int main()
 
 				//Dispersion im quasi-Gleichgewicht (wird über die letzten n=Mittelung Werte gemittelt)
 				if ( t > (Time-Mittelung) )
-					calcDispersionAndAngMomentum(&col[0], Sp, Ss, L, dR_mean, Var, V_mean);
+					calcDispersionAndAngMomentum(&col[0], Sp, Ss, dR_mean, Var, V_mean, momentum_file);
 			};
 
 			// Gemittelte Werte sind bisher nur aufsummiert, hier noch normieren
@@ -160,9 +152,6 @@ int main()
 			dR_mean /= Mittelung;
 			Var /= Mittelung;
 			V_mean /= Mittelung;
-
-			for(int i=0; i<colMax; i++)
-				momentum_file << (L[i] / Mittelung) << endl;
 
 			// put calculated stuff in output files
 			#pragma omp critical(dispersion_parallel_file)
