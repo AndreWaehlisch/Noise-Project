@@ -2,6 +2,7 @@
 *.png
 *.mp4
 *.avi
+*.mkv
 
 # Result DATA
 *.dat

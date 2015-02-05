@@ -1,13 +1,13 @@
 #!/bin/bash
 
 doCompile=false
-doNewRun=true
+doNewRun=false
 positionsMovies=true
 dispersion=false
 angularmomentumPlots=false
 variancePlots=false
 
-whenDoingMoviesDontRedoPlots=false
+whenDoingMoviesDontRedoPlots=true
 
 # cleanup of old data
 rm -f *.tmp
@@ -84,9 +84,9 @@ then
 
 		mkdir -p "./results/${Temp}/"
 
-		avconv -y -framerate 2 -i "./snapshots/${Temp}/fixed/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}fixed.avi"
-		avconv -y -framerate 2 -i "./snapshots/${Temp}/moving/snapshot%d.png" -pix_fmt yuv420p "./results/${Temp}/${Temp}moving.avi"
-		avconv -y -i "./results/${Temp}/${Temp}fixed.avi" -i "./results/${Temp}/${Temp}moving.avi" -filter_complex "[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w" "./results/${Temp}/${Temp}.avi"
+		avconv -y -framerate 2 -i "./snapshots/${Temp}/fixed/snapshot%d.png" -c:v h264 -crf 1 -r 24 "./results/${Temp}/${Temp}fixed.mkv"
+		avconv -y -framerate 2 -i "./snapshots/${Temp}/moving/snapshot%d.png" -c:v h264 -crf 1 -r 24 "./results/${Temp}/${Temp}moving.mkv"
+		avconv -y -i "./results/${Temp}/${Temp}fixed.mkv" -i "./results/${Temp}/${Temp}moving.mkv" -filter_complex "[0:v:0]pad=iw*2:ih[bg]; [bg][1:v:0]overlay=w" "./results/${Temp}/${Temp}.mkv"
 
 		echo "Temp done: ${Temp}"
 
