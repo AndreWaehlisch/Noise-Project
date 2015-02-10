@@ -1,6 +1,6 @@
 # external variables: maxValue, Temp, Time, numCols
 
-set terminal png size 1000,1000
+set terminal png size 600,600
 
 if (maxValue > 0) {
 	set xrange [0:maxValue]

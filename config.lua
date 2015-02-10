@@ -10,7 +10,7 @@ config = {
 	h = 0.001, --Integrationschrittweite
 	Mittelung = 2, -- Mittelung über letzten X Werte
 	rndInit = 0, -- initial Pos. der Teilchen (0 => 0, 1=>random 2=> kreis)
-	plotResolution = 1500,
+	plotResolution = 1,
 
 	["temp_N"] = temp_N,
 	["temp_start"] = temp_start,
